@@ -26,6 +26,8 @@
           source = data[1],
           w = header.width,
           h = header.height,
+          maxval = header.maxval,
+          channels = header.channels,
           canvas = $("<canvas>").attr({
             width: w,
             height: h
@@ -33,15 +35,28 @@
           context = canvas.get(0).getContext("2d"),
           image_data = context.getImageData(0, 0, w, h),
           target = image_data.data,
-          i, s, t;
+          i, s, t, v;
 
-      for (i = 0; i < w * h; i += 1) {
-        s = i * 3;
-        t = i * 4;
-        target[t] = source[s];
-        target[t + 1] = source[s + 1];
-        target[t + 2] = source[s + 2];
-        target[t + 3] = 255;
+      v = 256 / (maxval + 1)
+
+      if (channels == 1) {
+        for (i = 0; i < w * h; i += 1) {
+          s = i;
+          t = i * 4;
+          target[t] = source[s] * v;
+          target[t + 1] = source[s] * v;
+          target[t + 2] = source[s] * v;
+          target[t + 3] = 255 * v;
+        }
+      } else if (channels == 3) {
+        for (i = 0; i < w * h; i += 1) {
+          s = i * 3;
+          t = i * 4;
+          target[t] = source[s];
+          target[t + 1] = source[s + 1];
+          target[t + 2] = source[s + 2];
+          target[t + 3] = 255;
+        }
       }
 
       context.putImageData(image_data, 0, 0);
