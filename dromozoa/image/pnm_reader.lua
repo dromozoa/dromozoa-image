@@ -30,87 +30,165 @@ function class.new(this)
   }
 end
 
-function class:magic()
+function class:raise(message)
   local this = self.this
-  if this:match("P7\n") then
-    return true
+  if message == nil then
+    error("read error at position " .. this:seek())
+  else
+    error(message .. " at position " .. this:seek())
   end
 end
 
-function class:header()
-  local this = self.this
-  local that = linked_hash_table()
-  while true do
-    if this:match("ENDHDR\n") then
-      break
-    elseif this:match("HEIGHT%s+(%d+)%s*\n") then
-      that.height = tonumber(this[1])
-    elseif this:match("WIDTH%s+(%d+)[ \t]*\n") then
-      that.width = tonumber(this[1])
-    end
-  end
-end
-
-function class:pam_header()
-  local this = self.this
-  local header = linked_hash_table()
-  local tupltype = ""
-  for line in this:lines() do
-    line = line:gsub("^%s+", ""):gsub("%s+$", "")
-    local token, value = line:match("^(%S+)%s+(.*)$")
-    if token == nil then
-      token = line
-    end
-    if token == "ENDHDR" then
-      break
-    elseif token == "HEIGHT" then
-      header.height = tonumber(value)
-    elseif token == "WIDTH" then
-      header.width = tonumber(value)
-    elseif token == "DEPTH" then
-      header.depth = tonumber(value)
-    elseif token == "MAXVAL" then
-      header.maxval = tonumber(value)
-    elseif token == "TUPLTYPE" then
-      if tupltype == "" then
-        tupltype = value
-      else
-        tupltype = tupltype .. "\n" .. value
-      end
-    else
-      error("invalid token " .. token)
-    end
-  end
-  header.tupltype = tupltype
-  return header
-end
-
-function class:pam_image(header)
+function class:plain(header)
   local this = self.this
   local image = sequence()
-  local width = header.width
-  local height = header.height
-  local depth = header.depth
-  local bit_depth = math.log(header.maxval + 1, 2)
-  if bit_depth == 8 then
-    local n = width * height * depth
-    for i = 1, n do
-      local byte = this:read(1):byte()
-      image:push(byte)
+  local n = header.width * header.height * header.channels
+  local maxval = header.maxval
+  for i = 1, n do
+    local value = this:read("*n")
+    if 0 <= value and value <= maxval and value % 1 == 0 then
+      image[i] = value
+    else
+      self:raise()
     end
   end
   return { header, image }
 end
 
+function class:raw(header)
+  local this = self.this
+  local image = sequence()
+  local maxval = header.maxval
+  if maxval < 256 then
+    local n = header.width * header.height * header.channels
+    for i = 3, n, 4 do
+      image:push(this:read(4):byte(1, 4))
+    end
+    local m = n % 4
+    if m > 0 then
+      image:push(this:read(m):byte(1, m))
+    end
+  else
+    local n = header.width * header.height * header.channels
+    for i = 1, n, 2 do
+      local a, b, c, d = this:read(4):byte(1, 4)
+      image:push(a * 256 + b, c * 256 + d)
+    end
+    local m = n % 2
+    if m > 0 then
+      local a, b = this:read(2):byte(1, 2)
+      image:push(a * 256 + b)
+    end
+  end
+  return { header, image }
+end
+
+function class:pnm_header_value()
+  local this = self.this
+  while true do
+    local value = this:read("*n")
+    if value == nil then
+      local char = this:read(1)
+      if char == "#" then
+        this:read()
+      elseif char:find("%S") then
+        self:raise("invalid header")
+      end
+    else
+      if value > 0 and value % 1 == 0 then
+        return value
+      else
+        self:raise()
+      end
+    end
+  end
+end
+
+function class:pnm_header(magic)
+  local this = self.this
+  local header = linked_hash_table()
+  header.width = self:pnm_header_value()
+  header.height = self:pnm_header_value()
+  header.maxval = self:pnm_header_value()
+  if this:read(1):find("%S") then
+    self:raise()
+  end
+  if magic:find("P[25]") then
+    header.channels = 1
+  else
+    header.channels = 3
+  end
+  return header
+end
+
+function class:pam_header()
+  local this = self.this
+  local header = linked_hash_table()
+  for line in this:lines() do
+    local line = line:gsub("^%s+", ""):gsub("%s+$", "")
+    if line == "ENDHDR" then
+      break
+    elseif line:find("^TUPLTYPE") then
+      -- ignore
+    else
+      local token, value = line:match("^([A-Z]+)%s+([1-9]%d*)$")
+      local value = tonumber(value)
+      if token == "WIDTH" then
+        header.width = value
+      elseif token == "HEIGHT" then
+        header.height = value
+      elseif token == "DEPTH" then
+        if value <= 4 then
+          header.channels = value
+        else
+          self:raise("unsupported DEPTH")
+        end
+      elseif token == "MAXVAL" then
+        header.maxval = value
+      else
+        self:raise("invalid header")
+      end
+    end
+  end
+  if header.width == nil then
+    self:raise("WIDTH not found")
+  end
+  if header.height == nil then
+    self:raise("HEIGHT not found")
+  end
+  if header.channels == nil then
+    self:raise("DEPTH not found")
+  end
+  if header.maxval == nil then
+    self:raise("MAXVAL not found")
+  end
+  return header
+end
+
+function class:pnm(magic)
+  local header = self:pnm_header(magic)
+  if magic:find("P[56]") then
+    return self:raw(header)
+  else
+    return self:plain(header)
+  end
+end
+
 function class:pam()
-  return self:pam_image(self:pam_header())
+  return self:raw(self:pam_header())
 end
 
 function class:apply()
   local this = self.this
-  local matic = this:read(3)
-  if matic == "P7\n" then
-    return self:pam()
+  local magic = this:read(2)
+  if magic:find("P[2356]") then
+    if this:read(1):find("%s") then
+      return self:pnm(magic)
+    end
+  elseif magic == "P7" then
+    if this:read(1) == "\n" then
+      return self:pam()
+    end
   end
 end
 

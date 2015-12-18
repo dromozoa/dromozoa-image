@@ -18,5 +18,25 @@
 local json = require "dromozoa.commons.json"
 local pnm_reader = require "dromozoa.image.pnm_reader"
 
-local image = pnm_reader(io.stdin):apply()
-print(json.encode(image))
+local img = pnm_reader([[
+P2
+# Shows the word "FEEP" (example from Netpbm man page on PGM)
+24 7
+15
+0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+0  3  3  3  3  0  0  7  7  7  7  0  0 11 11 11 11  0  0 15 15 15 15  0
+0  3  0  0  0  0  0  7  0  0  0  0  0 11  0  0  0  0  0 15  0  0 15  0
+0  3  3  3  0  0  0  7  7  7  0  0  0 11 11 11  0  0  0 15 15 15 15  0
+0  3  0  0  0  0  0  7  0  0  0  0  0 11  0  0  0  0  0 15  0  0  0  0
+0  3  0  0  0  0  0  7  7  7  7  0  0 11 11 11 11  0  0 15  0  0  0  0
+0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+]]):apply()
+
+-- local img = pnm_reader([[
+-- P6
+-- 2 2
+-- 255
+-- ]] .. "\0\0\0\255\0\0\0\255\0\255\255\255"):apply()
+
+-- local img = pnm_reader(io.stdin):apply()
+json.write(io.stdout, img)
