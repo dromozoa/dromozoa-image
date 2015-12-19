@@ -18,6 +18,7 @@
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local string_reader = require "dromozoa.commons.string_reader"
+local uint16 = require "dromozoa.commons.uint16"
 
 local class = {}
 
@@ -30,13 +31,15 @@ function class.new(this)
   }
 end
 
-function class:read_uint8()
-  return self.this:read(1):byte()
+function class:read_uint8(n)
+  if n == nil then
+    n = 1
+  end
+  return self.this:read(n):byte(1, n)
 end
 
-function class:read_uint16()
-  local a, b = self.this:read(2):byte(1, 2)
-  return b * 256 + a
+function class:read_uint16(n)
+  return uint16.read(self.this, n, "<")
 end
 
 function class:apply()
