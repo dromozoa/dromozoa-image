@@ -17,16 +17,47 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-image.  If not, see <http://www.gnu.org/licenses/>.
 
-local width = 17
-local height = 23
-local out = io.stdout
+local w, h, a, b, c, d = ...
 
-out:write(([[
-P5
-%d %d
-255
-]]):format(width, height))
+w = tonumber(w)
+h = tonumber(h)
+a = tonumber(a)
+b = tonumber(b)
+c = tonumber(c)
+d = tonumber(d)
 
-for i = 1, width * height do
-  out:write(string.char(0xfe))
+local depth
+local tupltype
+local data
+
+if d then
+  depth = 4
+  tupltype = "RGB_ALPHA"
+  data = string.char(a, b, c, d)
+elseif c then
+  depth = 3
+  tupltype = "RGB"
+  data = string.char(a, b, c)
+elseif b then
+  depth = 2
+  tupltype = "GRAYSCALE_ALPHA"
+  data = string.char(a, b)
+else
+  depth = 1
+  tupltype = "GRAYSCALE"
+  data = string.char(a)
+end
+
+io.write(([[
+P7
+WIDTH %d
+HEIGHT %d
+DEPTH %d
+MAXVAL 255
+TUPLTYPE %s
+ENDHDR
+]]):format(w, h, depth, tupltype))
+
+for i = 1, w * h do
+  io.write(data)
 end
