@@ -17,38 +17,10 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-image.  If not, see <http://www.gnu.org/licenses/>.
 
-local w, h, a, b, c, d = ...
+local width = 17
+local height = 23
 
-w = tonumber(w)
-h = tonumber(h)
-a = tonumber(a)
-b = tonumber(b)
-c = tonumber(c)
-d = tonumber(d)
-
-local depth
-local tupltype
-local data
-
-if d then
-  depth = 4
-  tupltype = "RGB_ALPHA"
-  data = string.char(a, b, c, d)
-elseif c then
-  depth = 3
-  tupltype = "RGB"
-  data = string.char(a, b, c)
-elseif b then
-  depth = 2
-  tupltype = "GRAYSCALE_ALPHA"
-  data = string.char(a, b)
-else
-  depth = 1
-  tupltype = "GRAYSCALE"
-  data = string.char(a)
-end
-
-io.write(([[
+local header = [[
 P7
 WIDTH %d
 HEIGHT %d
@@ -56,8 +28,52 @@ DEPTH %d
 MAXVAL 255
 TUPLTYPE %s
 ENDHDR
-]]):format(w, h, depth, tupltype))
+]]
 
-for i = 1, w * h do
-  io.write(data)
+local function tupltype(depth)
+  if depth == 1 then
+    return "GRAYSCALE"
+  elseif depth == 2 then
+    return "GRAYSCALE_ALPHA"
+  elseif depth == 3 then
+    return "RGB"
+  elseif depth == 4 then
+    return "RGB_ALPHA"
+  end
 end
+
+local function generate_f(width, height, depth)
+  local out = assert(io.open("f" .. depth .. ".pam", "w"))
+  out:write(header:format(width, height, depth, tupltype(depth)))
+  local pixel = string.char(0xfe, 0xed, 0xfa, 0xce):sub(1, depth)
+  for i = 1, width * height do
+    out:write(pixel)
+  end
+  out:close()
+end
+
+local function generate_g(width, height, depth)
+  local out = assert(io.open("g" .. depth .. ".pam", "w"))
+  out:write(header:format(width, height, depth, tupltype(depth)))
+  local w = width - 1
+  local h = height - 1
+  for y = 0, h do
+    for x = 0, w do
+      local a = x * 255 / w a = a - a % 1
+      local b = y * 255 / h b = b - b % 1
+      local pixel = string.char(a, b, 255 - a, 255 - b):sub(1, depth)
+      out:write(pixel)
+    end
+  end
+  out:close()
+end
+
+generate_f(17, 23, 1)
+generate_f(17, 23, 2)
+generate_f(17, 23, 3)
+generate_f(17, 23, 4)
+
+generate_g(17, 23, 1)
+generate_g(17, 23, 2)
+generate_g(17, 23, 3)
+generate_g(17, 23, 4)
