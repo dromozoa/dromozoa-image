@@ -16,7 +16,16 @@
 -- along with dromozoa-image.  If not, see <http://www.gnu.org/licenses/>.
 
 local json = require "dromozoa.commons.json"
+local sequence = require "dromozoa.commons.sequence"
 local tga_reader = require "dromozoa.image.tga_reader"
 
-local img = tga_reader(io.stdin):apply()
-print(json.encode(img))
+for filename in sequence.each(arg) do
+  print(filename)
+  local mode, channels = filename:match("([fg])([1-4])")
+  if mode ~= nil then
+    local handle = assert(io.open(filename, "rb"))
+    local img = tga_reader(handle):apply()
+    handle:close()
+    print(json.encode(img[1]))
+  end
+end

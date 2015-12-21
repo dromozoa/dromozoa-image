@@ -19,6 +19,7 @@ local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local string_reader = require "dromozoa.commons.string_reader"
 local uint16 = require "dromozoa.commons.uint16"
+local unpack = require "dromozoa.commons.unpack"
 
 local class = {}
 
@@ -28,6 +29,7 @@ function class.new(this)
   end
   return {
     this = this;
+    debug = true;
   }
 end
 
@@ -42,70 +44,153 @@ function class:read_uint16(n)
   return uint16.read(self.this, n, "<")
 end
 
+function class:read_uint(bit_depth, n)
+  if bit_depth == 8 then
+    return self:read_uint8(n)
+  elseif bit_depth == 16 then
+    return self:read_uint16(n)
+  end
+end
+
+function class:read_pixel(pixel_depth)
+  if pixel_depth == 8 then
+    return self:read_uint8()
+  elseif pixel_depth == 24 then
+    local b, g, r = self:read_uint8(3)
+    return r, g, b
+  elseif pixel_depth == 32 then
+    local b, g, r, a = self:read_uint8(4)
+    return r, g, b, a
+  end
+end
+
 function class:apply()
   local this = self.this
 
-  local id_length = self:read_uint8()
-  local color_map_type = self:read_uint8()
-  local image_type_code = self:read_uint8()
-  -- print(id_length, color_map_type, image_type_code)
+  local id_length, color_map_type, image_type = self:read_uint8(3)
 
-  local color_map_origin = self:read_uint16()
-  local color_map_length = self:read_uint16()
-  local color_map_entry_size = self:read_uint8()
-  -- print(color_map_origin, color_map_length, color_map_entry_size)
-
-  local x_origin_image = self:read_uint16()
-  local y_origin_image = self:read_uint16()
-  local width  = self:read_uint16()
-  local height = self:read_uint16()
-  local image_pixel_size = self:read_uint8()
-  local image_desc = self:read_uint8()
-  -- print(x_origin_image, y_origin_image, width, height, image_pixel_size, image_desc)
-
-  if id_length ~= 0 then
-    this:seek(id_length)
+  if color_map_type > 1 then
+    error("unsupported color_map_type")
   end
 
-  assert(color_map_type == 0)
+  -- 0: no image data
+  -- 1: uncompressed, color-mapped
+  -- 2: uncompressed, true-color
+  -- 3: uncompressed, black-and-white
+  -- 9: run-length encoded, color-mapped
+  -- 10: run-length encoded, true-color
+  -- 11: run-length encoded, black-and-white
+  local run_length_encoded = false
+  if image_type > 8 then
+    run_length_encoded = true
+    image_type = image_type - 8
+  end
+  if image_type < 1 or image_type > 3 then
+    error("unsupported image_type")
+  end
 
-  local buffer;
+  local first_entry_index, color_map_length = self:read_uint16(2)
+  local color_map_entry_size = self:read_uint8()
+  local x_origin, y_origin, image_width, image_height = self:read_uint16(4)
+  local pixel_depth, image_descriptor = self:read_uint8(2)
 
-  local i = 0
-  local n = width * height * image_pixel_size / 8
-  local run_length
-  local pixel_bytes = image_pixel_size / 8
+  local alpha_channel_bits = image_descriptor % 16
+  image_descriptor = (image_descriptor - alpha_channel_bits) / 16
+  local right = image_descriptor % 2
+  image_descriptor = (image_descriptor - right) / 2
+  local top = image_descriptor % 2
+  image_descriptor = (image_descriptor - top) / 2
+  if image_descriptor > 0 then
+    error("invalid image_descriptor")
+  end
+  print(top, right, alpha_channel_bits)
+
+  if id_length > 0 then
+    this:seek("cur", id_length)
+  end
+
   local image = sequence()
+  local n = image_width * image_height
+  local channels
 
-  -- print(i, n)
-
-  while i < n do
-    local header = self:read_uint8()
-    if header < 128 then
-      -- raw packet
-      local length = header + 1
-      -- print("raw-length", length)
-      for j = 1, length do
-        local b, g, r = this:read(pixel_bytes):byte(1, pixel_bytes)
-        image:push(r, g, b)
+  if color_map_type == 0 then
+    if pixel_depth ~= 8 and pixel_depth ~= 24 and pixel_depth ~= 32 then
+      error("unsupported pixel_depth")
+    end
+    channels = pixel_depth / 8
+    if run_length_encoded then
+      local i = 0
+      while i < n do
+        local header = self:read_uint8()
+        if header < 128 then
+          -- raw packet
+          local length = header + 1
+          for j = 1, length do
+            image:push(self:read_pixel(pixel_depth))
+          end
+          i = i + length
+        else
+          -- run length packet
+          local length = header - 127
+          local a, b, c, d = self:read_pixel(pixel_depth)
+          for j = 1, length do
+            image:push(a, b, c, d)
+          end
+          i = i + length
+        end
       end
-      i = i + pixel_bytes * length
     else
-      -- run length packet
-      local length = header - 127
-      -- print("run-length", length)
-      local b, g, r = this:read(pixel_bytes):byte(1, pixel_bytes)
-      for j = 1, length do
-        image:push(r, g, b)
+      for i = 0, n - 1 do
+        image:push(self:read_pixel(pixel_depth))
       end
-      i = i + pixel_bytes * length
+    end
+  elseif color_map_type == 1 then
+    if color_map_entry_size ~= 8 and color_map_entry_size ~= 24 and color_map_entry_size ~= 32 then
+      error("unsupported color_map_entry_size")
+    end
+    channels = color_map_entry_size / 8
+    local color_map = {}
+    for i = 0, color_map_length - 1 do
+      color_map[i + first_entry_index] = { self:read_pixel(color_map_entry_size) }
+    end
+    if pixel_depth ~= 8 and pixel_depth ~= 16 then
+      error("unsupported pixel_depth")
+    end
+    if run_length_encoded then
+      local i = 0
+      while i < n do
+        local header = self:read_uint8()
+        if header < 128 then
+          -- raw packet
+          local length = header + 1
+          for j = 1, length do
+            local v = self:read_uint(pixel_depth)
+            image:push(unpack(color_map[v]))
+          end
+          i = i + length
+        else
+          -- run length packet
+          local length = header - 127
+          local v = self:read_uint(pixel_depth)
+          local a, b, c, d = unpack(color_map[v])
+          for j = 1, length do
+            image:push(a, b, c, d)
+          end
+          i = i + length
+        end
+      end
+    else
+      for i = 0, n - 1 do
+        local v = self:read_uint(pixel_depth)
+        image:push(unpack(color_map[v]))
+      end
     end
   end
 
   local header = linked_hash_table()
-  header.width = width
-  header.height = height
-  header.channels = pixel_bytes
+  header.width = image_width
+  header.height = image_height
+  header.channels = channels
   header.maxval = 255
   return { header, image }
 end
