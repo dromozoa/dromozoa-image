@@ -20,6 +20,7 @@ local sequence = require "dromozoa.commons.sequence"
 local string_reader = require "dromozoa.commons.string_reader"
 local uint16 = require "dromozoa.commons.uint16"
 local unpack = require "dromozoa.commons.unpack"
+local image = require "dromozoa.image.image"
 
 local class = {}
 
@@ -103,13 +104,15 @@ function class:apply()
   if image_descriptor > 0 then
     error("invalid image_descriptor")
   end
-  print(top, right, alpha_channel_bits)
+  if right == 1 then
+    error("unsupported image_origin")
+  end
 
   if id_length > 0 then
     this:seek("cur", id_length)
   end
 
-  local image = sequence()
+  local pixels = sequence()
   local n = image_width * image_height
   local channels
 
@@ -126,7 +129,7 @@ function class:apply()
           -- raw packet
           local length = header + 1
           for j = 1, length do
-            image:push(self:read_pixel(pixel_depth))
+            pixels:push(self:read_pixel(pixel_depth))
           end
           i = i + length
         else
@@ -134,14 +137,14 @@ function class:apply()
           local length = header - 127
           local a, b, c, d = self:read_pixel(pixel_depth)
           for j = 1, length do
-            image:push(a, b, c, d)
+            pixels:push(a, b, c, d)
           end
           i = i + length
         end
       end
     else
       for i = 0, n - 1 do
-        image:push(self:read_pixel(pixel_depth))
+        pixels:push(self:read_pixel(pixel_depth))
       end
     end
   elseif color_map_type == 1 then
@@ -165,7 +168,7 @@ function class:apply()
           local length = header + 1
           for j = 1, length do
             local v = self:read_uint(pixel_depth)
-            image:push(unpack(color_map[v]))
+            pixels:push(unpack(color_map[v]))
           end
           i = i + length
         else
@@ -174,7 +177,7 @@ function class:apply()
           local v = self:read_uint(pixel_depth)
           local a, b, c, d = unpack(color_map[v])
           for j = 1, length do
-            image:push(a, b, c, d)
+            pixels:push(a, b, c, d)
           end
           i = i + length
         end
@@ -182,7 +185,7 @@ function class:apply()
     else
       for i = 0, n - 1 do
         local v = self:read_uint(pixel_depth)
-        image:push(unpack(color_map[v]))
+        pixels:push(unpack(color_map[v]))
       end
     end
   end
@@ -191,8 +194,14 @@ function class:apply()
   header.width = image_width
   header.height = image_height
   header.channels = channels
-  header.maxval = 255
-  return { header, image }
+  header.min = 0
+  header.max = 255
+  local img = image(header, pixels)
+  if top == 0 then
+    return img:swap_vertical()
+  else
+    return img
+  end
 end
 
 local metatable = {
