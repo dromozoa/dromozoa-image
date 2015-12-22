@@ -52,15 +52,16 @@ for filename in sequence.each(arg) do
     local handle = assert(io.open(filename, "rb"))
     local img = tga_reader(handle):apply()
     handle:close()
-    local header = img[1]
+    local header = img[2]
+    print(json.encode(header))
     assert(header.width == width)
     assert(header.height == height)
     assert(header.channels >= channels)
-    assert(header.maxval == 255)
-    for y = 0, height - 1 do
-      for x = 0, width - 1 do
-        local a, b, c, d = fn(x, y, channels, header.channels)
-      end
-    end
+    assert(header.max == 255)
+    -- for y = 0, height - 1 do
+    --   for x = 0, width - 1 do
+    --     local a, b, c, d = fn(x, y, channels, header.channels)
+    --   end
+    -- end
   end
 end
