@@ -41,54 +41,6 @@ function class:max()
   return self[2].max
 end
 
-function class:index(x, y)
-  local header = self[2]
-  return x + (y - 1) * header.width
-end
-
-function class:get(x, y)
-  local header = self[2]
-  local pixels = self[3]
-  local channels = header.channels
-  local i = ((x - 1) + (y - 1) * header.width) * channels + 1
-  if channels == 1 then
-    return pixels[i]
-  elseif channels == 2 then
-    return pixels[i], pixels[i + 1]
-  elseif channels == 3 then
-    return pixels[i], pixels[i + 1], pixels[i + 2]
-  elseif channels == 4 then
-    return pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3]
-  else
-    error("invalid channels")
-  end
-end
-
-function class:set(x, y, a, b, c, d)
-  local header = self[2]
-  local pixels = self[3]
-  local channels = header.channels
-  local i = ((x - 1) + (y - 1) * header.width) * channels + 1
-  if channels == 1 then
-    pixels[i] = a
-  elseif channels == 2 then
-    pixels[i] = a
-    pixels[i + 1] = b
-  elseif channels == 3 then
-    pixels[i] = a
-    pixels[i + 1] = b
-    pixels[i + 2] = c
-  elseif channels == 4 then
-    pixels[i] = a
-    pixels[i + 1] = b
-    pixels[i + 2] = c
-    pixels[i + 3] = d
-  else
-    error("invalid channels")
-  end
-  return self
-end
-
 local metatable = {
   __index = class;
 }
