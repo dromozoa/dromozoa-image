@@ -73,8 +73,7 @@ local metatable = {}
 
 function metatable:__index(key)
   if key == "R" then
-    local image = self.image
-    return image:pixels()[self.i]
+    return self.image:pixels()[self.i]
   elseif key == "G" then
     local image = self.image
     if image:channels() > 2 then
