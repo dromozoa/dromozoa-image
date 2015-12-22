@@ -226,14 +226,16 @@ function class:apply()
     end
   end
 
-  assert(#pixels == n * channels)
+  if #pixels ~= n * channels then
+    error("invalid pixels")
+  end
 
-  if top_to_bottom > 0 then
-    local m = image_width * channels
+  if top_to_bottom == 0 then
+    local n = image_width * channels
     for y = 1, image_height / 2 do
-      local a = m * (y - 1)
-      local b = m * (image_height - y)
-      for x = 1, m do
+      local a = n * (y - 1)
+      local b = n * (image_height - y)
+      for x = 1, n do
         local i = x + a
         local j = x + b
         pixels[i], pixels[j] = pixels[j], pixels[i]

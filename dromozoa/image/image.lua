@@ -15,6 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-image.  If not, see <http://www.gnu.org/licenses/>.
 
+local pixel = require "dromozoa.image.pixel"
+
 local class = {}
 
 function class.new(header, pixels)
@@ -39,6 +41,23 @@ end
 
 function class:max()
   return self[2].max
+end
+
+function class:pixels()
+  return self[3]
+end
+
+function class:pixel(x, y)
+  return pixel(self, x, y)
+end
+
+function class:each()
+  return coroutine.wrap(function ()
+    local pixel = self:pixel()
+    repeat
+      coroutine.yield(pixel)
+    until pixel:next() == nil
+  end)
 end
 
 local metatable = {
