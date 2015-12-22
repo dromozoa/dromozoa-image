@@ -19,7 +19,6 @@ local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local string_reader = require "dromozoa.commons.string_reader"
 local uint16 = require "dromozoa.commons.uint16"
-local unpack = require "dromozoa.commons.unpack"
 local image = require "dromozoa.image.image"
 
 local class = {}
@@ -44,15 +43,40 @@ function class:read_uint8(n)
   return self.this:read(n):byte(1, n)
 end
 
-function class:read_uint16(n)
-  return uint16.read(self.this, n, "<")
+function class:read_uint16()
+  return uint16.read(self.this, 1, "<")
 end
 
-function class:read_uint(bit_depth, n)
-  if bit_depth == 8 then
+function class:read_uint(pixel_depth)
+  if pixel_depth == 8 then
     return self:read_uint8(n)
-  elseif bit_depth == 16 then
+  elseif pixel_depth == 16 then
     return self:read_uint16(n)
+  end
+end
+
+function class:read_pixel(pixel_depth, channels)
+  if pixel_depth == 8 then
+    return self:read_uint8()
+  elseif pixel_depth == 16 then
+    local v = self:read_uint16()
+    local b = v % 32
+    local v = (v - b) / 32
+    local g = v % 32
+    local v = (v - g) / 32
+    local r = v % 32
+    local a = (v - r) / 32 * 31
+    if channels == 3 then
+      return r, g, b
+    else
+      return r, g, b, a
+    end
+  elseif pixel_depth == 24 then
+    local b, g, r = self:read_uint8(3)
+    return r, g, b
+  elseif pixel_depth == 32 then
+    local b, g, r, a = self:read_uint8(4)
+    return r, g, b, a
   end
 end
 
@@ -82,35 +106,6 @@ function class:channels(pixel_depth, alpha_channel_bits)
   error("unsupported image_descriptor (alpha_channel_bits)")
 end
 
-function class:read_pixel(pixel_depth, channels)
-  if pixel_depth == 8 then
-    return self:read_uint8()
-  elseif pixel_depth == 16 then
-    local v = self:read_uint16()
-    local b = v % 32
-    local v = (v - b) / 32
-    local g = v % 32
-    local v = (v - g) / 32
-    local r = v % 32
-    local a = (v - r) / 32 * 31
-    if channels == 3 then
-      return r, g, b
-    else
-      return r, g, b, a
-    end
-  elseif pixel_depth == 24 then
-    local b, g, r = self:read_uint8(3)
-    return r, g, b
-  elseif pixel_depth == 32 then
-    local b, g, r, a = self:read_uint8(4)
-    if channels == 3 then
-      return r, g, b
-    else
-      return r, g, b, a
-    end
-  end
-end
-
 function class:apply()
   local this = self.this
 
@@ -121,12 +116,6 @@ function class:apply()
     error("unsupported color_map_type")
   end
 
-  -- 1: uncompressed, color-mapped
-  -- 2: uncompressed, true-color
-  -- 3: uncompressed, black-and-white
-  -- 9: run-length encoded, color-mapped
-  -- 10: run-length encoded, true-color
-  -- 11: run-length encoded, black-and-white
   local image_type = self:read_uint8()
   local run_length_encoded = false
   if image_type > 8 then
@@ -141,25 +130,24 @@ function class:apply()
   local color_map_length = self:read_uint16()
   local color_map_entry_size = self:read_uint8()
 
-  -- x-origin of image
-  -- y-origin of image
+  -- x-origin of image, y-origin of image
   self:skip(4)
 
   local image_width = self:read_uint16()
   local image_height = self:read_uint16()
   local pixel_depth = self:read_uint8()
-  local image_descriptor = self:read_uint8()
 
+  local image_descriptor = self:read_uint8()
   local alpha_channel_bits = image_descriptor % 16
   image_descriptor = (image_descriptor - alpha_channel_bits) / 16
   local right_to_left = image_descriptor % 2
   image_descriptor = (image_descriptor - right_to_left) / 2
   local top_to_bottom = image_descriptor % 2
   image_descriptor = (image_descriptor - top_to_bottom) / 2
-  if image_descriptor > 0 then
+  if image_descriptor ~= 0 then
     error("invalid image_descriptor")
   end
-  if right_to_left > 0 then
+  if right_to_left == 1 then
     error("unsupported image_descriptor (right_to_left)")
   end
 
@@ -176,8 +164,8 @@ function class:apply()
   if color_map_type == 0 then
     channels, max = self:channels(pixel_depth, alpha_channel_bits)
     if run_length_encoded then
-      local i = 0
-      while i < n do
+      local i = 1
+      while i <= n do
         local header = self:read_uint8()
         if header < 128 then
           -- raw packet
@@ -197,19 +185,22 @@ function class:apply()
         end
       end
     else
-      for i = 0, n - 1 do
+      for i = 1, n do
         pixels:push(self:read_pixel(pixel_depth))
       end
     end
-  elseif color_map_type == 1 then
+  else
+    if pixel_depth ~= 8 and pixel_depth ~= 16 then
+      error("unsupported pixel_depth")
+    end
     channels, max = self:channels(color_map_entry_size, alpha_channel_bits)
     local color_map = {}
     for i = 0, color_map_length - 1 do
       color_map[i + color_map_first_entry_index] = { self:read_pixel(color_map_entry_size, channels) }
     end
     if run_length_encoded then
-      local i = 0
-      while i < n do
+      local i = 1
+      while i <= n do
         local header = self:read_uint8()
         if header < 128 then
           -- raw packet
@@ -229,7 +220,7 @@ function class:apply()
         end
       end
     else
-      for i = 0, n - 1 do
+      for i = 1, n do
         pixels:copy(color_map[self:read_uint(pixel_depth)])
       end
     end

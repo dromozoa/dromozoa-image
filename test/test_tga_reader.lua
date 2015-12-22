@@ -57,6 +57,7 @@ for filename in sequence.each(arg) do
     assert(header.width == width)
     assert(header.height == height)
     assert(header.channels >= channels)
+    assert(header.min == 0)
     assert(header.max == 255)
     -- for y = 0, height - 1 do
     --   for x = 0, width - 1 do
