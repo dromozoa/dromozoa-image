@@ -24,6 +24,7 @@ esac
 
 "$lua" test/data.lua test/data/*.tga
 "$lua" test/data.lua test/data/*.p?m
+"$lua" test/data.lua test/data/*.png
 
 for i in test/test*.lua
 do
