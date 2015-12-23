@@ -17,13 +17,13 @@
 
 local image = require "dromozoa.image"
 
-local filename, width, height = ...
+local filename = ...
 local handle = assert(io.open(filename, "rb"))
 local img = image.read(handle)
 handle:close()
 
-local width = tonumber(width)
-local height = tonumber(height)
+local width = img:width()
+local height = img:height()
 
 local min = img:min()
 local max = img:max()
