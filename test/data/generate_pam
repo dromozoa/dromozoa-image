@@ -1,0 +1,79 @@
+#! /usr/bin/env lua
+
+-- Copyright (C) 2015 Tomoyuki Fujimori <moyu@dromozoa.com>
+--
+-- This file is part of dromozoa-image.
+--
+-- dromozoa-image is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- dromozoa-image is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
+-- along with dromozoa-image.  If not, see <http://www.gnu.org/licenses/>.
+
+local width = 17
+local height = 23
+
+local header = [[
+P7
+WIDTH %d
+HEIGHT %d
+DEPTH %d
+MAXVAL 255
+TUPLTYPE %s
+ENDHDR
+]]
+
+local function tupltype(depth)
+  if depth == 1 then
+    return "GRAYSCALE"
+  elseif depth == 2 then
+    return "GRAYSCALE_ALPHA"
+  elseif depth == 3 then
+    return "RGB"
+  elseif depth == 4 then
+    return "RGB_ALPHA"
+  end
+end
+
+local function generate_f(width, height, depth)
+  local out = assert(io.open("f" .. depth .. ".pam", "w"))
+  out:write(header:format(width, height, depth, tupltype(depth)))
+  local pixel = string.char(0xfe, 0xed, 0xfa, 0xce):sub(1, depth)
+  for i = 1, width * height do
+    out:write(pixel)
+  end
+  out:close()
+end
+
+local function generate_g(width, height, depth)
+  local out = assert(io.open("g" .. depth .. ".pam", "w"))
+  out:write(header:format(width, height, depth, tupltype(depth)))
+  local w = width - 1
+  local h = height - 1
+  for y = 0, h do
+    for x = 0, w do
+      local a = x * 255 / w a = a - a % 1
+      local b = y * 255 / h b = b - b % 1
+      local pixel = string.char(a, b, 255 - a, 255 - b):sub(1, depth)
+      out:write(pixel)
+    end
+  end
+  out:close()
+end
+
+generate_f(17, 23, 1)
+generate_f(17, 23, 2)
+generate_f(17, 23, 3)
+generate_f(17, 23, 4)
+
+generate_g(17, 23, 1)
+generate_g(17, 23, 2)
+generate_g(17, 23, 3)
+generate_g(17, 23, 4)
