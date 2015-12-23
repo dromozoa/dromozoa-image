@@ -17,6 +17,7 @@
 
 local sequence = require "dromozoa.commons.sequence"
 local magick_reader = require "dromozoa.image.magick_reader"
+local magick_writer = require "dromozoa.image.magick_writer"
 local pam_writer = require "dromozoa.image.pam_writer"
 local pixel = require "dromozoa.image.pixel"
 local pnm_reader = require "dromozoa.image.pnm_reader"
@@ -37,8 +38,8 @@ end
 local writer
 if sips_writer.support then
   writer = sips_writer
--- elseif magick_writer.support then
---   writer = magick_writer
+elseif magick_writer.support then
+  writer = magick_writer
 end
 
 function class.read_pnm(this)
