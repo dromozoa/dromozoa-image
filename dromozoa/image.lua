@@ -52,6 +52,22 @@ function class.read(this)
   return reader(this):apply()
 end
 
+function class.read_file(filename)
+  local handle = assert(io.open(filename, "rb"))
+  local magic = handle:read(2)
+  handle:seek("set", 0)
+  local result
+  if magic:find("P[23567]") then
+    result = class.read_pnm(handle)
+  elseif filename:find("%.[Tt][Gg][Aa]$") then
+    result = class.read_tga(handle)
+  else
+    result = class.read(handle)
+  end
+  handle:close()
+  return result
+end
+
 function class.new(header, pixels)
   if pixels == nil then
     pixels = sequence()
