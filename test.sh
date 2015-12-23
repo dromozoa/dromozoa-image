@@ -30,4 +30,4 @@ for i in test/test*.lua
 do
   "$lua" "$i"
 done
-rm -f test*.tga test*.png
+rm -f test*.pam test*.tga test*.png

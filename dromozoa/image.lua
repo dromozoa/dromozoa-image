@@ -17,6 +17,7 @@
 
 local sequence = require "dromozoa.commons.sequence"
 local magick_reader = require "dromozoa.image.magick_reader"
+local pam_writer = require "dromozoa.image.pam_writer"
 local pixel = require "dromozoa.image.pixel"
 local pnm_reader = require "dromozoa.image.pnm_reader"
 local sips_reader = require "dromozoa.image.sips_reader"
@@ -119,6 +120,10 @@ function class:each(min_x, max_x, min_y, max_y)
       coroutine.yield(pixel)
     until pixel:next() == nil
   end)
+end
+
+function class:write_pam(out)
+  return pam_writer(self, out):apply()
 end
 
 function class:write_tga(out)

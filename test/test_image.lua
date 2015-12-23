@@ -16,6 +16,7 @@
 -- along with dromozoa-image.  If not, see <http://www.gnu.org/licenses/>.
 
 local json = require "dromozoa.commons.json"
+local sequence = require "dromozoa.commons.sequence"
 local image = require "dromozoa.image"
 
 for channels = 1, 4 do
@@ -79,18 +80,19 @@ assert(p.R == 15)
 assert(p.G == 16)
 assert(p.B == 255)
 
-image.read_pnm([[
+local img = image.read_pnm([[
 P2
 2 1
 15
 0 15
-]]):write_tga(assert(io.open("test.tga", "wb"))):close()
+]])
+img:write_pam(assert(io.open("test.pam", "wb"))):close()
+img:write_tga(assert(io.open("test.tga", "wb"))):close()
 
-local handle = assert(io.open("test.tga", "rb"))
-local img = image.read_tga(handle)
-handle:close()
-
-local p = img:pixel()
-assert(p.Y == 0)
-p:next()
-assert(p.Y == 255)
+for i in sequence():push("test.pam", "test.tga"):each() do
+  local img = image.read_file(i)
+  local p = img:pixel()
+  assert(p.Y == img:min())
+  p:next()
+  assert(p.Y == img:max())
+end
