@@ -59,6 +59,7 @@ for filename in sequence.each(arg) do
   elseif sips_reader.support then
     reader = sips_reader
   end
+
   local mode, channels = filename:match("([fg])([1-4])")
   channels = tonumber(channels)
   local fn
@@ -67,23 +68,21 @@ for filename in sequence.each(arg) do
   elseif mode == "g" then
     fn = g
   end
-  if reader ~= nil and mode ~= nil then
-    print(filename)
-    local handle = assert(io.open(filename, "rb"))
-    local img = reader(handle):apply()
-    handle:close()
-    local header = img[2]
-    assert(img:width() == width)
-    assert(img:height() == height)
-    assert(img:channels() >= channels)
-    assert(img:min() == 0)
-    assert(img:max() == 255)
-    for p in img:each() do
-      local R, G, B, A = fn(p.x, p.y, channels)
-      assert(p.R == R)
-      assert(p.G == G)
-      assert(p.B == B)
-      assert(p.A == A)
-    end
+
+  local handle = assert(io.open(filename, "rb"))
+  local img = reader(handle):apply()
+  handle:close()
+  local header = img[2]
+  assert(img:width() == width)
+  assert(img:height() == height)
+  assert(img:channels() >= channels)
+  assert(img:min() == 0)
+  assert(img:max() == 255)
+  for p in img:each() do
+    local R, G, B, A = fn(p.x, p.y, channels)
+    assert(p.R == R)
+    assert(p.G == G)
+    assert(p.B == B)
+    assert(p.A == A)
   end
 end
