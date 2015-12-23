@@ -18,6 +18,7 @@
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local string_reader = require "dromozoa.commons.string_reader"
+local uint16 = require "dromozoa.commons.uint16"
 local image = require "dromozoa.image.image"
 
 local class = {}
@@ -31,15 +32,6 @@ function class.new(this)
   }
 end
 
-function class:raise(message)
-  local this = self.this
-  if message == nil then
-    error("read error at position " .. this:seek())
-  else
-    error(message .. " at position " .. this:seek())
-  end
-end
-
 function class:read_plain(header)
   local this = self.this
   local pixels = sequence()
@@ -47,9 +39,9 @@ function class:read_plain(header)
   local min = header.min
   local max = header.max
   for i = 1, n do
-    local v = this:read("*n")
-    if v ~= nil and min <= v and v <= max and v % 1 == 0 then
-      pixels[i] = v
+    local value = this:read("*n")
+    if value ~= nil and min <= value and value <= max and value % 1 == 0 then
+      pixels[i] = value
     else
       error("invalid pixel")
     end
@@ -63,7 +55,7 @@ function class:read_raw(header)
   local n = header.width * header.height * header.channels
   local max = header.max
   if max < 256 then
-    for i = 3, n, 4 do
+    for i = 4, n, 4 do
       pixels:push(this:read(4):byte(1, 4))
     end
     local m = n % 4
@@ -71,14 +63,12 @@ function class:read_raw(header)
       pixels:push(this:read(m):byte(1, m))
     end
   else
-    for i = 1, n, 2 do
-      local a, b, c, d = this:read(4):byte(1, 4)
-      pixels:push(a * 256 + b, c * 256 + d)
+    for i = 2, n, 2 do
+      pixels:push(uint16.read(this, 2, ">"))
     end
     local m = n % 2
     if m > 0 then
-      local a, b = this:read(2):byte(1, 2)
-      pixels:push(a * 256 + b)
+      pixels:push(uint16.read(this, 1, ">"))
     end
   end
   return image(header, pixels)
@@ -93,13 +83,13 @@ function class:read_pnm_header_value()
       if char == "#" then
         this:read()
       elseif char:find("%S") then
-        self:raise("invalid header")
+        error("invalid header")
       end
     else
       if value > 0 and value % 1 == 0 then
         return value
       else
-        self:raise()
+        error("invalid header value")
       end
     end
   end
@@ -113,7 +103,7 @@ function class:read_pnm_header(magic)
   header.min = 0
   header.max = self:read_pnm_header_value()
   if this:read(1):find("%S") then
-    self:raise()
+    error("invalid header")
   end
   if magic:find("P[25]") then
     header.channels = 1
@@ -143,27 +133,27 @@ function class:read_pam_header()
         if value <= 4 then
           header.channels = value
         else
-          self:raise("unsupported DEPTH")
+          error("invalid DEPTH")
         end
       elseif token == "MAXVAL" then
         header.min = 0
         header.max = value
       else
-        self:raise("invalid header")
+        error("invalid header")
       end
     end
   end
   if header.width == nil then
-    self:raise("WIDTH not found")
+    error("WIDTH not found")
   end
   if header.height == nil then
-    self:raise("HEIGHT not found")
+    error("HEIGHT not found")
   end
   if header.channels == nil then
-    self:raise("DEPTH not found")
+    error("DEPTH not found")
   end
   if header.max == nil then
-    self:raise("MAXVAL not found")
+    error("MAXVAL not found")
   end
   return header
 end

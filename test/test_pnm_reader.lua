@@ -32,11 +32,20 @@ P2
 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
 ]]):apply()
 
+assert(img:width() == 24)
+assert(img:height() == 7)
+assert(img:channels() == 1)
+assert(img:min() == 0)
+assert(img:max() == 15)
+assert(#img:pixels() == 24 * 7)
+
 local img = pnm_reader([[
 P6
-2 2
-255
-]] .. "\0\0\0\255\0\0\0\255\0\255\255\255"):apply()
+3 1
+65535
+]] .. ("\255\0\0\1\0\0"):rep(3)):apply()
 
--- local img = pnm_reader(io.stdin):apply()
-json.write(io.stdout, img)
+local p = img:pixel()
+assert(p.R == 0xff00)
+assert(p.G == 0x0001)
+assert(p.B == 0x0000)

@@ -17,6 +17,7 @@
 
 local json = require "dromozoa.commons.json"
 local sequence = require "dromozoa.commons.sequence"
+local pnm_reader = require "dromozoa.image.pnm_reader"
 local tga_reader = require "dromozoa.image.tga_reader"
 
 local width = 17
@@ -49,7 +50,12 @@ local function g(x, y, channels)
 end
 
 for filename in sequence.each(arg) do
-  -- print(filename)
+  local reader
+  if filename:find("%.p.m$") then
+    reader = pnm_reader
+  elseif filename:find("%.tga$") then
+    reader = tga_reader
+  end
   local mode, channels = filename:match("([fg])([1-4])")
   channels = tonumber(channels)
   local fn
@@ -58,9 +64,10 @@ for filename in sequence.each(arg) do
   elseif mode == "g" then
     fn = g
   end
-  if mode ~= nil then
+  if reader ~= nil and mode ~= nil then
+    -- print(filename)
     local handle = assert(io.open(filename, "rb"))
-    local img = tga_reader(handle):apply()
+    local img = reader(handle):apply()
     handle:close()
     local header = img[2]
     assert(img:width() == width)
@@ -70,7 +77,6 @@ for filename in sequence.each(arg) do
     assert(img:max() == 255)
     for p in img:each() do
       local R, G, B, A = fn(p.x, p.y, channels)
-      -- print(p.x, p.y, "|", p.R, p.G, p.B, p.A, "|", R, G, B, A)
       assert(p.R == R)
       assert(p.G == G)
       assert(p.B == B)
