@@ -17,30 +17,28 @@
 
 local sequence = require "dromozoa.commons.sequence"
 local shell = require "dromozoa.commons.shell"
-local string_reader = require "dromozoa.commons.string_reader"
-local write_file = require "dromozoa.commons.write_file"
+local read_file = require "dromozoa.commons.read_file"
 
 local class = {}
 
 class.support = shell.exec("sips >/dev/null 2>&1")
 
-function class.new(this)
-  if type(this) == "string" then
-    this = string_reader(this)
-  end
+function class.new(this, that)
   return {
     this = this;
+    that = that;
   }
 end
 
-function class:apply()
+function class:apply(format)
   local this = self.this
+  local that = self.that
 
   local commands = sequence():push("sips")
-  commands:push("--setProperty", "format", "tga")
+  commands:push("--setProperty", "format", format)
 
   local tmpin = os.tmpname()
-  assert(write_file(tmpin, this:read("*a")))
+  this:write_tga(assert(io.open(tmpin, "wb"))):close()
   commands:push(shell.quote(tmpin))
 
   local tmpout = os.tmpname()
@@ -54,11 +52,9 @@ function class:apply()
     os.remove(tmpout)
     return nil, what, code
   else
-    local handle = assert(io.open(tmpout, "rb"))
+    that:write(assert(read_file(tmpout)))
     os.remove(tmpout)
-    local img = class.super.read_tga(handle)
-    handle:close()
-    return img
+    return that
   end
 end
 
@@ -67,7 +63,7 @@ local metatable = {
 }
 
 return setmetatable(class, {
-  __call = function (_, this)
-    return setmetatable(class.new(this), metatable)
+  __call = function (_, this, that)
+    return setmetatable(class.new(this, that), metatable)
   end;
 })

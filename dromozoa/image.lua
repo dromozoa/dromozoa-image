@@ -20,6 +20,7 @@ local magick_reader = require "dromozoa.image.magick_reader"
 local pixel = require "dromozoa.image.pixel"
 local pnm_reader = require "dromozoa.image.pnm_reader"
 local sips_reader = require "dromozoa.image.sips_reader"
+local sips_writer = require "dromozoa.image.sips_writer"
 local tga_reader = require "dromozoa.image.tga_reader"
 local tga_writer = require "dromozoa.image.tga_writer"
 
@@ -30,6 +31,13 @@ if sips_reader.support then
   reader = sips_reader
 elseif magick_reader.support then
   reader = magick_reader
+end
+
+local writer
+if sips_writer.support then
+  writer = sips_writer
+-- elseif magick_writer.support then
+--   writer = magick_writer
 end
 
 function class.read_pnm(this)
@@ -101,8 +109,17 @@ function class:write_tga(out)
   return tga_writer(self, out):apply()
 end
 
+function class:write_png(out)
+  return writer(self, out):apply("png")
+end
+
 pnm_reader.super = class
 tga_reader.super = class
+
+sips_reader.super = class
+sips_writer.super = class
+
+magick_reader.super = class
 
 local metatable = {
   __index = class;

@@ -15,7 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-image.  If not, see <http://www.gnu.org/licenses/>.
 
-local json = require "dromozoa.commons.json"
 local image = require "dromozoa.image"
 
 local img = image.read_pnm([[

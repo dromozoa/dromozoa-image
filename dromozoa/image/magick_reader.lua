@@ -19,7 +19,6 @@ local sequence = require "dromozoa.commons.sequence"
 local shell = require "dromozoa.commons.shell"
 local string_reader = require "dromozoa.commons.string_reader"
 local write_file = require "dromozoa.commons.write_file"
-local pnm_reader = require "dromozoa.image.pnm_reader"
 
 local class = {}
 
@@ -56,7 +55,9 @@ function class:apply()
   else
     local handle = assert(io.open(tmpout, "rb"))
     os.remove(tmpout)
-    return pnm_reader(handle):apply()
+    local img = class.super.read_pnm(handle)
+    handle:close()
+    return img
   end
 end
 
