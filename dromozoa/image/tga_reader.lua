@@ -129,7 +129,8 @@ function class:apply()
   local color_map_length = self:read_uint16()
   local color_map_entry_size = self:read_uint8()
 
-  -- x-origin of image and y-origin of image
+  -- x-origin of image
+  -- y-origin of image
   self:skip(4)
 
   local image_width = self:read_uint16()
@@ -150,7 +151,6 @@ function class:apply()
     error("unsupported image_descriptor (right_to_left)")
   end
 
-  -- image id
   if id_length > 0 then
     self:skip(id_length)
   end

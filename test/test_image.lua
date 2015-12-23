@@ -44,5 +44,53 @@ for channels = 1, 4 do
   for p in img:each() do
     assert(p.A == 255)
   end
+  img:write_tga(assert(io.open(("test%d.tga"):format(channels), "wb"))):close()
   -- print(json.encode(img))
 end
+
+local img = image({
+  width = 2;
+  height = 1;
+  channels = 3;
+  min = 0;
+  max = 65535;
+})
+local p = img:pixel()
+p:rgb(0, 255, 256)
+p:next()
+p:rgb(4095, 4096, 65535)
+img:write_tga(assert(io.open("test.tga", "wb"))):close()
+
+local handle = assert(io.open("test.tga", "rb"))
+local img = image.read_tga(handle)
+handle:close()
+assert(img:width() == 2)
+assert(img:height() == 1)
+assert(img:channels() == 4)
+assert(img:min() == 0)
+assert(img:max() == 255)
+
+local p = img:pixel()
+assert(p.R == 0)
+assert(p.G == 0)
+assert(p.B == 1)
+p:next()
+assert(p.R == 15)
+assert(p.G == 16)
+assert(p.B == 255)
+
+image.read_pnm([[
+P2
+2 1
+15
+0 15
+]]):write_tga(assert(io.open("test.tga", "wb"))):close()
+
+local handle = assert(io.open("test.tga", "rb"))
+local img = image.read_tga(handle)
+handle:close()
+
+local p = img:pixel()
+assert(p.Y == 0)
+p:next()
+assert(p.Y == 255)
