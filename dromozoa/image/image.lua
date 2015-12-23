@@ -16,10 +16,6 @@
 -- along with dromozoa-image.  If not, see <http://www.gnu.org/licenses/>.
 
 local pixel = require "dromozoa.image.pixel"
-local pixel1 = require "dromozoa.image.pixel1"
-local pixel2 = require "dromozoa.image.pixel2"
-local pixel3 = require "dromozoa.image.pixel3"
-local pixel4 = require "dromozoa.image.pixel4"
 
 local class = {}
 
@@ -51,18 +47,15 @@ function class:pixels()
   return self[3]
 end
 
-function class:pixel()
-  local channels = self:channels()
-  if channels == 1 then
-    return pixel1(1, self:width(), 1, self:height(), self:max(), self:pixels()):reset(1, 1)
-  elseif channels == 2 then
-    return pixel2(1, self:width(), 1, self:height(), self:max(), self:pixels()):reset(1, 1)
-  elseif channels == 3 then
-    return pixel3(1, self:width(), 1, self:height(), self:max(), self:pixels()):reset(1, 1)
-  elseif channels == 4 then
-    return pixel4(1, self:width(), 1, self:height(), self:max(), self:pixels()):reset(1, 1)
+function class:pixel(x, y)
+  if x == nil then
+    x = 1
   end
-  return pixel(self)
+  if y == nil then
+    y = 1
+  end
+  local header = self[2]
+  return pixel(header.channels, 1, header.width, 1, header.height, header.max, self[3]):reset(x, y)
 end
 
 function class:each()

@@ -41,6 +41,7 @@ function class:next()
   if x < self.max_x then
     self.x = x + 1
     self.i = self.i + 1
+    return self
   else
     local y = self.y
     if y < self.max_y then

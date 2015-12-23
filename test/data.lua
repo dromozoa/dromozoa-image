@@ -52,6 +52,7 @@ local function g(x, y, channels)
 end
 
 for filename in sequence.each(arg) do
+  -- print(filename)
   local reader
   if filename:find("%.p.m$") then
     reader = pnm_reader
@@ -81,7 +82,9 @@ for filename in sequence.each(arg) do
   assert(img:channels() >= channels)
   assert(img:min() == 0)
   assert(img:max() == 255)
+  local n = 0
   for p in img:each() do
+    n = n + 1
     local R, G, B, A = fn(p.x, p.y, channels)
     -- print(p.x, p.y, "|", p.R, p.G, p.B, p.A, "|", R, G, B, A)
     assert(p.R == R)
@@ -89,4 +92,5 @@ for filename in sequence.each(arg) do
     assert(p.B == B)
     assert(p.A == A)
   end
+  assert(n == width * height)
 end
