@@ -46,6 +46,7 @@ P6
 ]] .. ("\255\0\0\1\0\0"):rep(3)):apply()
 
 local p = img:pixel()
+-- print(p)
 assert(p.R == 0xff00)
 assert(p.G == 0x0001)
 assert(p.B == 0x0000)

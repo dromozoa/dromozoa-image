@@ -83,6 +83,7 @@ for filename in sequence.each(arg) do
   assert(img:max() == 255)
   for p in img:each() do
     local R, G, B, A = fn(p.x, p.y, channels)
+    -- print(p.x, p.y, "|", p.R, p.G, p.B, p.A, "|", R, G, B, A)
     assert(p.R == R)
     assert(p.G == G)
     assert(p.B == B)
