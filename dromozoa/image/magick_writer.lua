@@ -34,14 +34,14 @@ function class:apply(format)
   local this = self.this
   local that = self.that
 
-  local commands = sequence():push("sips")
+  local commands = sequence():push("convert")
 
   local tmpin = os.tmpname()
   this:write_pam(assert(io.open(tmpin, "wb"))):close()
   commands:push(shell.quote(tmpin))
 
   local tmpout = os.tmpname()
-  commands:push("--out", shell.quote(format .. ":" .. tmpout))
+  commands:push(shell.quote(format .. ":" .. tmpout))
 
   local command = commands:concat(" ") .. " >/dev/null 2>&1"
   local result, what, code = shell.exec(command)

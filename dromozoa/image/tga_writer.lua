@@ -40,31 +40,30 @@ function class:apply()
     error("image_height too big")
   end
 
-  that
-    -- id length
-    :write("\0")
-    -- color map type (no color map)
-    :write("\0")
-    -- image type (uncompressed, true color image)
-    :write("\2")
-    -- first entry index
-    :write("\0\0")
-    -- color map length
-    :write("\0\0")
-    -- color map entry size
-    :write("\0")
-    -- x-origin of image
-    :write("\0\0")
-    -- y-origin of image
-    :write("\0\0")
-    -- image width
-    :write(uint16.char(image_width, "<"))
-    -- image height
-    :write(uint16.char(image_height, "<"))
-    -- pixel depth
-    :write("\32")
-    -- image descriptor (alpha channel bits, top to bottom)
-    :write("\40")
+  -- id length
+  that:write("\0")
+  -- color map type (no color map)
+  that:write("\0")
+  -- image type (uncompressed, true color image)
+  that:write("\2")
+  -- first entry index
+  that:write("\0\0")
+  -- color map length
+  that:write("\0\0")
+  -- color map entry size
+  that:write("\0")
+  -- x-origin of image
+  that:write("\0\0")
+  -- y-origin of image
+  that:write("\0\0")
+  -- image width
+  that:write(uint16.char(image_width, "<"))
+  -- image height
+  that:write(uint16.char(image_height, "<"))
+  -- pixel depth
+  that:write("\32")
+  -- image descriptor (alpha channel bits, top to bottom)
+  that:write("\40")
 
   local min = this:min()
   local max = this:max()

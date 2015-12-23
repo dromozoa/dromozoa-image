@@ -51,14 +51,13 @@ function class:apply()
     error("MAXVAL too big")
   end
 
-  that
-    :write("P7\n")
-    :write("WIDTH ", this:width(), "\n")
-    :write("HEIGHT ", this:height(), "\n")
-    :write("DEPTH ", channels, "\n")
-    :write("MAXVAL ", m, "\n")
-    :write("TUPLTYPE ", tupltype, "\n")
-    :write("ENDHDR\n")
+  that:write("P7\n")
+  that:write("WIDTH ", this:width(), "\n")
+  that:write("HEIGHT ", this:height(), "\n")
+  that:write("DEPTH ", channels, "\n")
+  that:write("MAXVAL ", m, "\n")
+  that:write("TUPLTYPE ", tupltype, "\n")
+  that:write("ENDHDR\n")
 
   if m < 256 then
     if channels == 1 then
@@ -77,7 +76,7 @@ function class:apply()
         local R = p.R - min
         local G = p.G - min
         local B = p.B - min
-        that:write(string.char(B - B % 1, G - G % 1, R - R % 1))
+        that:write(string.char(R - R % 1, G - G % 1, B - B % 1))
       end
     elseif channels == 4 then
       for p in this:each() do
@@ -85,7 +84,7 @@ function class:apply()
         local G = p.G - min
         local B = p.B - min
         local A = p.A - min
-        that:write(string.char(B - B % 1, G - G % 1, R - R % 1, A - A % 1))
+        that:write(string.char(R - R % 1, G - G % 1, B - B % 1, A - A % 1))
       end
     end
   else
