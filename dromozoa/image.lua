@@ -15,17 +15,20 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-image.  If not, see <http://www.gnu.org/licenses/>.
 
+local sequence = require "dromozoa.commons.sequence"
 local magick_reader = require "dromozoa.image.magick_reader"
+local pixel = require "dromozoa.image.pixel"
 local pnm_reader = require "dromozoa.image.pnm_reader"
 local sips_reader = require "dromozoa.image.sips_reader"
 local tga_reader = require "dromozoa.image.tga_reader"
 
 local class = {}
 
+local reader
 if sips_reader.support then
-  class.reader = sips_reader
+  reader = sips_reader
 elseif magick_reader.support then
-  class.reader = magick_reader
+  reader = magick_reader
 end
 
 function class.read_pnm(this)
@@ -33,11 +36,75 @@ function class.read_pnm(this)
 end
 
 function class.read_tga(this)
-  return pnm_reader(this):apply()
+  return tga_reader(this):apply()
 end
 
 function class.read(this)
-  return class.reader(this):apply()
+  return reader(this):apply()
 end
 
-return class
+function class.new(header, pixels)
+  if pixels == nil then
+    pixels = sequence()
+  end
+  return { "dromozoa-image", header, pixels }
+end
+
+function class:width()
+  return self[2].width
+end
+
+function class:height()
+  return self[2].height
+end
+
+function class:channels()
+  return self[2].channels
+end
+
+function class:min()
+  return self[2].min
+end
+
+function class:max()
+  return self[2].max
+end
+
+function class:pixel(min_x, max_x, min_y, max_y)
+  local header = self[2]
+  if min_x == nil then
+    min_x = 1
+  end
+  if max_x == nil then
+    max_x = header.width
+  end
+  if min_y == nil then
+    min_y = 1
+  end
+  if max_y == nil then
+    max_y = header.height
+  end
+  return pixel(header.channels, header.width, min_x, max_x, min_y, max_y, header.max, self[3]):reset(min_x, min_y)
+end
+
+function class:each(min_x, max_x, min_y, max_y)
+  return coroutine.wrap(function ()
+    local pixel = self:pixel(min_x, max_x, min_y, max_y)
+    repeat
+      coroutine.yield(pixel)
+    until pixel:next() == nil
+  end)
+end
+
+pnm_reader.super = class
+tga_reader.super = class
+
+local metatable = {
+  __index = class;
+}
+
+return setmetatable(class, {
+  __call = function (_, header, pixels)
+    return setmetatable(class.new(header, pixels), metatable)
+  end;
+})

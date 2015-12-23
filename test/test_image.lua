@@ -16,7 +16,7 @@
 -- along with dromozoa-image.  If not, see <http://www.gnu.org/licenses/>.
 
 local json = require "dromozoa.commons.json"
-local image = require "dromozoa.image.image"
+local image = require "dromozoa.image"
 
 for channels = 1, 4 do
   local img = image({

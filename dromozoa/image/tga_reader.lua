@@ -19,7 +19,6 @@ local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local string_reader = require "dromozoa.commons.string_reader"
 local uint16 = require "dromozoa.commons.uint16"
-local image = require "dromozoa.image.image"
 
 local class = {}
 
@@ -249,7 +248,7 @@ function class:apply()
   header.channels = channels
   header.min = 0
   header.max = max
-  return image(header, pixels)
+  return class.super(header, pixels)
 end
 
 local metatable = {

@@ -16,9 +16,9 @@
 -- along with dromozoa-image.  If not, see <http://www.gnu.org/licenses/>.
 
 local json = require "dromozoa.commons.json"
-local pnm_reader = require "dromozoa.image.pnm_reader"
+local image = require "dromozoa.image"
 
-local img = pnm_reader([[
+local img = image.read_pnm([[
 P2
 # Shows the word "FEEP" (example from Netpbm man page on PGM)
 24 7
@@ -30,7 +30,7 @@ P2
 0  3  0  0  0  0  0  7  0  0  0  0  0 11  0  0  0  0  0 15  0  0  0  0
 0  3  0  0  0  0  0  7  7  7  7  0  0 11 11 11 11  0  0 15  0  0  0  0
 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
-]]):apply()
+]])
 
 assert(img:width() == 24)
 assert(img:height() == 7)
@@ -61,11 +61,11 @@ end
 assert(n == 9)
 assert(m == 21)
 
-local img = pnm_reader([[
+local img = image.read_pnm([[
 P6
 3 1
 65535
-]] .. ("\255\0\0\1\0\0"):rep(3)):apply()
+]] .. ("\255\0\0\1\0\0"):rep(3))
 
 local p = img:pixel()
 -- print(p)

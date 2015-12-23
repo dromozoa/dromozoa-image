@@ -19,7 +19,6 @@ local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local string_reader = require "dromozoa.commons.string_reader"
 local uint16 = require "dromozoa.commons.uint16"
-local image = require "dromozoa.image.image"
 
 local class = {}
 
@@ -46,7 +45,7 @@ function class:read_plain(header)
       error("invalid pixel")
     end
   end
-  return image(header, pixels)
+  return class.super(header, pixels)
 end
 
 function class:read_raw(header)
@@ -71,7 +70,7 @@ function class:read_raw(header)
       pixels:push(uint16.read(this, 1, ">"))
     end
   end
-  return image(header, pixels)
+  return class.super(header, pixels)
 end
 
 function class:read_pnm_header_value()
