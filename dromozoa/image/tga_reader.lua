@@ -49,9 +49,9 @@ end
 
 function class:read_uint(pixel_depth)
   if pixel_depth == 8 then
-    return self:read_uint8(n)
+    return self:read_uint8()
   elseif pixel_depth == 16 then
-    return self:read_uint16(n)
+    return self:read_uint16()
   end
 end
 

@@ -18,6 +18,7 @@
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local string_reader = require "dromozoa.commons.string_reader"
+local image = require "dromozoa.image.image"
 
 local class = {}
 
@@ -39,51 +40,52 @@ function class:raise(message)
   end
 end
 
-function class:plain(header)
+function class:read_plain(header)
   local this = self.this
-  local image = sequence()
+  local pixels = sequence()
   local n = header.width * header.height * header.channels
-  local maxval = header.maxval
+  local min = header.min
+  local max = header.max
   for i = 1, n do
     local value = this:read("*n")
-    if 0 <= value and value <= maxval and value % 1 == 0 then
-      image[i] = value
+    if min <= value and value <= max and value % 1 == 0 then
+      pixels[i] = value
     else
       self:raise()
     end
   end
-  return { header, image }
+  return image(header, pixels)
 end
 
-function class:raw(header)
+function class:read_raw(header)
   local this = self.this
-  local image = sequence()
-  local maxval = header.maxval
-  if maxval < 256 then
+  local pixels = sequence()
+  local max = header.max
+  if max < 256 then
     local n = header.width * header.height * header.channels
     for i = 3, n, 4 do
-      image:push(this:read(4):byte(1, 4))
+      pixels:push(this:read(4):byte(1, 4))
     end
     local m = n % 4
     if m > 0 then
-      image:push(this:read(m):byte(1, m))
+      pixels:push(this:read(m):byte(1, m))
     end
   else
     local n = header.width * header.height * header.channels
     for i = 1, n, 2 do
       local a, b, c, d = this:read(4):byte(1, 4)
-      image:push(a * 256 + b, c * 256 + d)
+      pixels:push(a * 256 + b, c * 256 + d)
     end
     local m = n % 2
     if m > 0 then
       local a, b = this:read(2):byte(1, 2)
-      image:push(a * 256 + b)
+      pixels:push(a * 256 + b)
     end
   end
-  return { header, image }
+  return image(header, pixels)
 end
 
-function class:pnm_header_value()
+function class:read_pnm_header_value()
   local this = self.this
   while true do
     local value = this:read("*n")
@@ -104,12 +106,13 @@ function class:pnm_header_value()
   end
 end
 
-function class:pnm_header(magic)
+function class:read_pnm_header(magic)
   local this = self.this
   local header = linked_hash_table()
-  header.width = self:pnm_header_value()
-  header.height = self:pnm_header_value()
-  header.maxval = self:pnm_header_value()
+  header.width = self:read_pnm_header_value()
+  header.height = self:read_pnm_header_value()
+  header.min = 0
+  header.max = self:read_pnm_header_value()
   if this:read(1):find("%S") then
     self:raise()
   end
@@ -121,7 +124,7 @@ function class:pnm_header(magic)
   return header
 end
 
-function class:pam_header()
+function class:read_pam_header()
   local this = self.this
   local header = linked_hash_table()
   for line in this:lines() do
@@ -144,7 +147,8 @@ function class:pam_header()
           self:raise("unsupported DEPTH")
         end
       elseif token == "MAXVAL" then
-        header.maxval = value
+        header.min = 0
+        header.max = value
       else
         self:raise("invalid header")
       end
@@ -159,23 +163,23 @@ function class:pam_header()
   if header.channels == nil then
     self:raise("DEPTH not found")
   end
-  if header.maxval == nil then
+  if header.max == nil then
     self:raise("MAXVAL not found")
   end
   return header
 end
 
-function class:pnm(magic)
-  local header = self:pnm_header(magic)
+function class:read_pnm(magic)
+  local header = self:read_pnm_header(magic)
   if magic:find("P[56]") then
-    return self:raw(header)
+    return self:read_raw(header)
   else
-    return self:plain(header)
+    return self:read_plain(header)
   end
 end
 
-function class:pam()
-  return self:raw(self:pam_header())
+function class:read_pam()
+  return self:read_raw(self:read_pam_header())
 end
 
 function class:apply()
@@ -183,11 +187,11 @@ function class:apply()
   local magic = this:read(2)
   if magic:find("P[2356]") then
     if this:read(1):find("%s") then
-      return self:pnm(magic)
+      return self:read_pnm(magic)
     end
   elseif magic == "P7" then
     if this:read(1) == "\n" then
-      return self:pam()
+      return self:read_pam()
     end
   end
 end
