@@ -20,14 +20,14 @@ local pixel2 = require "dromozoa.image.pixel2"
 local pixel3 = require "dromozoa.image.pixel3"
 local pixel4 = require "dromozoa.image.pixel4"
 
-return function (channels, min_x, max_x, min_y, max_y, max, pixels)
+return function (channels, width, min_x, max_x, min_y, max_y, max, pixels)
   if channels == 1 then
-    return pixel1(min_x, max_x, min_y, max_y, max, pixels)
+    return pixel1(width, min_x, max_x, min_y, max_y, max, pixels)
   elseif channels == 2 then
-    return pixel2(min_x, max_x, min_y, max_y, max, pixels)
+    return pixel2(width, min_x, max_x, min_y, max_y, max, pixels)
   elseif channels == 3 then
-    return pixel3(min_x, max_x, min_y, max_y, max, pixels)
+    return pixel3(width, min_x, max_x, min_y, max_y, max, pixels)
   elseif channels == 4 then
-    return pixel4(min_x, max_x, min_y, max_y, max, pixels)
+    return pixel4(width, min_x, max_x, min_y, max_y, max, pixels)
   end
 end

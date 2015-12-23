@@ -43,10 +43,6 @@ function class:max()
   return self[2].max
 end
 
-function class:pixels()
-  return self[3]
-end
-
 function class:pixel(min_x, max_x, min_y, max_y)
   local header = self[2]
   if min_x == nil then
@@ -61,7 +57,7 @@ function class:pixel(min_x, max_x, min_y, max_y)
   if max_y == nil then
     max_y = header.height
   end
-  return pixel(header.channels, min_x, max_x, min_y, max_y, header.max, self[3]):reset(min_x, min_y)
+  return pixel(header.channels, header.width, min_x, max_x, min_y, max_y, header.max, self[3]):reset(min_x, min_y)
 end
 
 function class:each(min_x, max_x, min_y, max_y)

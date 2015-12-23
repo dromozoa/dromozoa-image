@@ -37,7 +37,29 @@ assert(img:height() == 7)
 assert(img:channels() == 1)
 assert(img:min() == 0)
 assert(img:max() == 15)
-assert(#img:pixels() == 24 * 7)
+
+local n = 0
+for p in img:each() do
+  n = n + 1
+  -- print(p.Y)
+  assert(p.R == p.Y)
+  assert(p.G == p.Y)
+  assert(p.B == p.Y)
+  assert(p.A == 15)
+end
+assert(n == 24 * 7)
+
+local n = 0
+local m = 0
+for p in img:each(2, 4, 2, 4) do
+  n = n + 1
+  m = m + p.Y
+  -- print(p.x, p.y, "|", p.R, p.G, p.B, p.Y, p.A)
+  assert(p.Y == 0 or p.Y == 3)
+  assert(p.A == 15)
+end
+assert(n == 9)
+assert(m == 21)
 
 local img = pnm_reader([[
 P6

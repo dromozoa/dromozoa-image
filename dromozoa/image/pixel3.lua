@@ -17,11 +17,11 @@
 
 local class = {}
 
-function class.new(min_x, max_x, min_y, max_y, max, pixels)
+function class.new(width, min_x, max_x, min_y, max_y, max, pixels)
   return {
+    width = width;
     min_x = min_x;
     max_x = max_x;
-    width = max_x - min_x + 1;
     min_y = min_y;
     max_y = max_y;
     max = max;
@@ -79,7 +79,7 @@ function metatable:__index(key)
 end
 
 return setmetatable(class, {
-  __call = function (_, min_x, max_x, min_y, max_y, max, pixels)
-    return setmetatable(class.new(min_x, max_x, min_y, max_y, max, pixels), metatable)
+  __call = function (_, width, min_x, max_x, min_y, max_y, max, pixels)
+    return setmetatable(class.new(width, min_x, max_x, min_y, max_y, max, pixels), metatable)
   end;
 })
