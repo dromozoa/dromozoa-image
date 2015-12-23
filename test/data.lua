@@ -17,6 +17,7 @@
 
 local json = require "dromozoa.commons.json"
 local sequence = require "dromozoa.commons.sequence"
+local magick_reader = require "dromozoa.image.magick_reader"
 local pnm_reader = require "dromozoa.image.pnm_reader"
 local sips_reader = require "dromozoa.image.sips_reader"
 local tga_reader = require "dromozoa.image.tga_reader"
@@ -58,6 +59,8 @@ for filename in sequence.each(arg) do
     reader = tga_reader
   elseif sips_reader.support then
     reader = sips_reader
+  elseif magick_reader.support then
+    reader = magick_reader
   end
 
   local mode, channels = filename:match("([fg])([1-4])")
