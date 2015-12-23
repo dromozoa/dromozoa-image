@@ -47,20 +47,26 @@ function class:pixels()
   return self[3]
 end
 
-function class:pixel(x, y)
-  if x == nil then
-    x = 1
-  end
-  if y == nil then
-    y = 1
-  end
+function class:pixel(min_x, max_x, min_y, max_y)
   local header = self[2]
-  return pixel(header.channels, 1, header.width, 1, header.height, header.max, self[3]):reset(x, y)
+  if min_x == nil then
+    min_x = 1
+  end
+  if max_x == nil then
+    max_x = header.width
+  end
+  if min_y == nil then
+    min_y = 1
+  end
+  if max_y == nil then
+    max_y = header.height
+  end
+  return pixel(header.channels, min_x, max_x, min_y, max_y, header.max, self[3]):reset(min_x, min_y)
 end
 
-function class:each()
+function class:each(min_x, max_x, min_y, max_y)
   return coroutine.wrap(function ()
-    local pixel = self:pixel()
+    local pixel = self:pixel(min_x, max_x, min_y, max_y)
     repeat
       coroutine.yield(pixel)
     until pixel:next() == nil
