@@ -28,6 +28,8 @@ P3
 ]])
 img:write_png(assert(io.open("test.png", "wb"))):close()
 
+img:write_file("test.pam"):write_file("test.tga")
+
 local handle = assert(io.open("test.png"))
 local img = image.read(handle)
 handle:close()

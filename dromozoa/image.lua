@@ -135,6 +135,19 @@ function class:write_png(out)
   return writer(self, out):apply("png")
 end
 
+function class:write_file(filename)
+  local out= assert(io.open(filename, "wb"))
+  if filename:find("%.[Pp][Aa][Mm]$") then
+    self:write_pam(assert(io.open(filename, "wb"))):close()
+  elseif filename:find("%.[Tt][Gg][Aa]$") then
+    self:write_tga(assert(io.open(filename, "wb"))):close()
+  else
+    local format = filename:match("%.([^%.]+)$"):lower()
+    writer(self, assert(io.open(filename, "wb"))):apply(format):close()
+  end
+  return self
+end
+
 pnm_reader.super = class
 tga_reader.super = class
 
