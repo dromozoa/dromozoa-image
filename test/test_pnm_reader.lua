@@ -32,11 +32,11 @@ P2
 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
 ]]):apply()
 
--- local img = pnm_reader([[
--- P6
--- 2 2
--- 255
--- ]] .. "\0\0\0\255\0\0\0\255\0\255\255\255"):apply()
+local img = pnm_reader([[
+P6
+2 2
+255
+]] .. "\0\0\0\255\0\0\0\255\0\255\255\255"):apply()
 
 -- local img = pnm_reader(io.stdin):apply()
 json.write(io.stdout, img)

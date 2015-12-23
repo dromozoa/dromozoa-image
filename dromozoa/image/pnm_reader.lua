@@ -47,11 +47,11 @@ function class:read_plain(header)
   local min = header.min
   local max = header.max
   for i = 1, n do
-    local value = this:read("*n")
-    if min <= value and value <= max and value % 1 == 0 then
-      pixels[i] = value
+    local v = this:read("*n")
+    if v ~= nil and min <= v and v <= max and v % 1 == 0 then
+      pixels[i] = v
     else
-      self:raise()
+      error("invalid pixel")
     end
   end
   return image(header, pixels)
@@ -60,9 +60,9 @@ end
 function class:read_raw(header)
   local this = self.this
   local pixels = sequence()
+  local n = header.width * header.height * header.channels
   local max = header.max
   if max < 256 then
-    local n = header.width * header.height * header.channels
     for i = 3, n, 4 do
       pixels:push(this:read(4):byte(1, 4))
     end
@@ -71,7 +71,6 @@ function class:read_raw(header)
       pixels:push(this:read(m):byte(1, m))
     end
   else
-    local n = header.width * header.height * header.channels
     for i = 1, n, 2 do
       local a, b, c, d = this:read(4):byte(1, 4)
       pixels:push(a * 256 + b, c * 256 + d)
