@@ -22,11 +22,11 @@
   var $ = root.jQuery;
   $(function () {
     $.getJSON("dromozoa-image.json", function (data) {
-      var header = data[0],
-          source = data[1],
+      var header = data[1],
+          source = data[2],
           w = header.width,
           h = header.height,
-          maxval = header.maxval,
+          max = header.max,
           channels = header.channels,
           canvas = $("<canvas>").attr({
             width: w,
@@ -37,8 +37,7 @@
           target = image_data.data,
           i, s, t, v;
 
-      v = 256 / (maxval + 1)
-
+      v = 256 / (max + 1)
       if (channels == 1) {
         for (i = 0; i < w * h; i += 1) {
           s = i;
@@ -46,16 +45,34 @@
           target[t] = source[s] * v;
           target[t + 1] = source[s] * v;
           target[t + 2] = source[s] * v;
-          target[t + 3] = 255 * v;
+          target[t + 3] = 255;
+        }
+      } else if (channels == 2) {
+        for (i = 0; i < w * h; i += 1) {
+          s = i * 2;
+          t = i * 4;
+          target[t] = source[s] * v;
+          target[t + 1] = source[s] * v;
+          target[t + 2] = source[s] * v;
+          target[t + 3] = source[s + 1];
         }
       } else if (channels == 3) {
         for (i = 0; i < w * h; i += 1) {
           s = i * 3;
           t = i * 4;
+          target[t] = source[s] * v;
+          target[t + 1] = source[s + 1] * v;
+          target[t + 2] = source[s + 2] * v;
+          target[t + 3] = 255;
+        }
+      } else if (channels == 4) {
+        for (i = 0; i < w * h; i += 1) {
+          s = i * 4;
+          t = i * 4;
           target[t] = source[s];
           target[t + 1] = source[s + 1];
           target[t + 2] = source[s + 2];
-          target[t + 3] = 255;
+          target[t + 3] = source[s + 3];
         }
       }
 

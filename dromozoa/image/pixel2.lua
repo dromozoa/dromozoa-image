@@ -54,6 +54,21 @@ function class:next()
   end
 end
 
+function class:rgb(R, G, B)
+  self.pixels[self.i] = 0.299 * R + 0.587 * G + 0.114 * B
+  return self
+end
+
+function class:gray(Y)
+  self.pixels[self.i] = Y
+  return self
+end
+
+function class:alpha(A)
+  self.pixels[self.i + 1] = A
+  return self
+end
+
 local metatable = {}
 
 function metatable:__index(key)

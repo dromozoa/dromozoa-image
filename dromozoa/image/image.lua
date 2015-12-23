@@ -15,11 +15,15 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-image.  If not, see <http://www.gnu.org/licenses/>.
 
+local sequence = require "dromozoa.commons.sequence"
 local pixel = require "dromozoa.image.pixel"
 
 local class = {}
 
 function class.new(header, pixels)
+  if pixels == nil then
+    pixels = sequence()
+  end
   return { "dromozoa-image", header, pixels }
 end
 
